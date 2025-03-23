@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Search</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+            font-size: 16px;
+        }
+        h2 {
+            color: #4CAF50;
+        }
+        input {
+            width: 80%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid #4CAF50;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        input:focus {
+            border-color: #81C784;
+            outline: none;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        li:hover {
+            transform: translateY(-5px);
+            box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        #connect {
+            font-size: 12px;
+            color: #999;
+            cursor: pointer;
+            position: fixed;
+            bottom: 5px;
+            right: 5px;
+            transition: color 0.3s ease;
+        }
+        #connect:hover {
+            color: #4CAF50;
+        }
+        #adminPanel {
+            display: none;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #81C784;
+        }
+        .product-link {
+            color: #4CAF50;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        .product-link:hover {
+            color: #81C784;
+        }
+        #adminProductList li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #adminProductList button {
+            background-color: #E57373;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        #adminProductList button:hover {
+            background-color: #EF5350;
+        }
+        #exitAdmin {
+            background-color: #E57373;
+            padding: 10px;
+            margin-top: 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        #exitAdmin:hover {
+            background-color: #EF5350;
+        }
+    </style>
+</head>
+<body>
+    <h2>Product Search</h2>
+    <input type="text" id="searchBar" placeholder="Search for a product..." onkeyup="searchProduct()">
+    <ul id="productList"></ul>
+    
+    <div id="connect" onclick="showLogin()">Connect</div>
+    
+    <div id="adminPanel">
+        <h3>Manage Products</h3>
+        <input type="text" id="productName" placeholder="Product Name">
+        <input type="text" id="productLink" placeholder="Product Link">
+        <button onclick="addProduct()">Add</button>
+        <h3>Delete a Product</h3>
+        <ul id="adminProductList"></ul>
+        <button id="exitAdmin" onclick="exitAdmin()">Exit Admin</button>
+    </div>
+    
+    <script>
+        let products = JSON.parse(localStorage.getItem("products")) || [];
+        updateProductList();
+
+        function searchProduct() {
+            let input = document.getElementById('searchBar').value.toLowerCase();
+            let list = document.getElementById('productList');
+            list.innerHTML = '';
+            products.forEach((product, index) => {
+                if (product.name.toLowerCase().includes(input)) {
+                    let li = document.createElement('li');
+                    li.innerHTML = `${product.name}: (<a href="${product.link}" target="_blank" class="product-link">link</a>)`;
+                    list.appendChild(li);
+                }
+            });
+        }
+
+        function showLogin() {
+            let code = prompt("Enter admin code:");
+            if (code === "secret123") {
+                document.getElementById("adminPanel").style.display = "block";
+                updateAdminList();
+            } else {
+                alert("Wrong code!");
+            }
+        }
+
+        function addProduct() {
+            let name = document.getElementById('productName').value;
+            let link = document.getElementById('productLink').value;
+
+            // Validate URL format
+            if (!isValidURL(link)) {
+                alert("The provided link isn't working. Please provide a valid URL.");
+                return;
+            }
+
+            if (name && link) {
+                products.push({ name, link });
+                localStorage.setItem("products", JSON.stringify(products));
+                updateProductList();
+                updateAdminList();
+                document.getElementById('productName').value = '';
+                document.getElementById('productLink').value = '';
+            }
+        }
+
+        function isValidURL(url) {
+            const regex = /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z0-9]{2,}(\/[^\s]*)?$/i;
+            return regex.test(url);
+        }
+
+        function deleteProduct(index) {
+            products.splice(index, 1);
+            localStorage.setItem("products", JSON.stringify(products));
+            updateProductList();
+            updateAdminList();
+        }
+
+        function updateProductList() {
+            let list = document.getElementById('productList');
+            list.innerHTML = '';
+            products.forEach(product => {
+                let li = document.createElement('li');
+                li.innerHTML = `${product.name}: (<a href="${product.link}" target="_blank" class="product-link">link</a>)`;
+                list.appendChild(li);
+            });
+        }
+
+        function updateAdminList() {
+            let adminList = document.getElementById('adminProductList');
+            adminList.innerHTML = '';
+            products.forEach((product, index) => {
+                let li = document.createElement('li');
+                li.innerHTML = `${product.name}: (<a href="${product.link}" target="_blank" class="product-link">link</a>) <button onclick="deleteProduct(${index})">Delete</button>`;
+                adminList.appendChild(li);
+            });
+        }
+
+        function exitAdmin() {
+            document.getElementById("adminPanel").style.display = "none";
+        }
+    </script>
+</body>
+</html>
